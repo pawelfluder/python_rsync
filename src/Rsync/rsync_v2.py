@@ -17,7 +17,6 @@ UWAGA: Dla najlepszego efektu uruchamiaj z:
 lub ustaw zmienną środowiskową PYTHONUNBUFFERED=1
 """
 
-import os
 import subprocess
 import sys
 import shutil
@@ -35,7 +34,7 @@ from modules.YamlParsing.files_collections_yaml_parsing_v1 import load_file_coll
 from modules.RetryNetworkDrive.retry_network_drive_v2 import ensure_nas_available
 
 # Stałe
-DEFAULT_QNAP_TARGET = Path(os.getenv("qnap_default_target", "/Volumes/qnap"))
+DEFAULT_QNAP_TARGET = Path("/Volumes/qnap/01_todo_a")
 INPUT_YAML_PATH = REPO_ROOT / "AA_Input" / "input.yaml"
 QMAP_PATH = Path("/Volumes/qnap")
 

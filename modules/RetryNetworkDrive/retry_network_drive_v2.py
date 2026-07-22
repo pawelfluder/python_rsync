@@ -1,11 +1,10 @@
-import os
 import subprocess
 import time
 from pathlib import Path
 
 
 NAS_PATH = Path("/Volumes/qnap")
-NAS_MOUNT_PATH = f"//{os.getenv('qnap_username', '')}@{os.getenv('qnap_host', '')}/qnap"
+NAS_MOUNT_PATH = "//pawelfluder@100.117.139.83/qnap"
 NAS_RETRY_DELAY = 10
 
 
