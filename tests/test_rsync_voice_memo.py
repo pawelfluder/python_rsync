@@ -10,25 +10,47 @@ Zadna z tych testow nie laczy sie z prawdziwym iCloud/Voice Memos ani z prawdziw
 Uruchomienie: python3 -m unittest tests.test_rsync_voice_memo -v
 """
 
+import io
+import importlib.util
+import re
 import shutil
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
 VOICE_MEMO_DIR = SRC_ROOT / "rsync_voice-memo"
+PYTHON_MODULES_ROOT = REPO_ROOT.parent / "python_modules"
 
 sys.path.insert(0, str(SRC_ROOT))
 sys.path.insert(0, str(VOICE_MEMO_DIR))
+sys.path.insert(0, str(PYTHON_MODULES_ROOT))
 
 import config  # noqa: E402
 import diagnostics  # noqa: E402
 import discovery  # noqa: E402
 import sync  # noqa: E402
 from rsync_core import nas as rsync_core_nas  # noqa: E402
+from modules.files_selection.files_selection_v4 import (  # noqa: E402
+    display_files_with_numbers,
+    parse_selection,
+)
+
+
+def _load_voice_memo_v2():
+    """rsync_voice-memo_v2.py ma myslnik w nazwie - wczytanie przez importlib, nie 'import'."""
+    path = VOICE_MEMO_DIR / "rsync_voice-memo_v2.py"
+    spec = importlib.util.spec_from_file_location("rsync_voice_memo_v2_under_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+voice_memo_v2 = _load_voice_memo_v2()
 
 
 def _touch(path: Path, mtime: float | None = None) -> None:
@@ -209,6 +231,159 @@ class ConfigTests(unittest.TestCase):
         target = config.load_voice_memo_target(missing)
 
         self.assertEqual(target, config.DEFAULT_TARGET)
+
+
+class FilesSelectionV4DisplayOrderTests(unittest.TestCase):
+    """v4: numery przypisywane jak w v3 (chronologicznie), ale wypisywane od najwyzszego."""
+
+    def test_display_order_is_reversed_but_numbering_stays_stable(self):
+        recordings = [Path(f"/rec/2025010{i}.m4a") for i in range(1, 6)]
+        collections = {"voice-memos": recordings}
+
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            display_files_with_numbers(collections, None, None, show_durations=False)
+        output_lines = [line for line in buffer.getvalue().splitlines() if line.strip().startswith("(")]
+
+        # (5) najnowszy na gorze ... (1) najstarszy na dole.
+        self.assertEqual(
+            output_lines,
+            [
+                "    (5) 20250105.m4a",
+                "    (4) 20250104.m4a",
+                "    (3) 20250103.m4a",
+                "    (2) 20250102.m4a",
+                "    (1) 20250101.m4a",
+            ],
+        )
+
+        # Numeracja uzywana przez parse_selection() jest niezalezna od kolejnosci
+        # wypisywania - (1) zawsze wskazuje najstarszy plik.
+        self.assertEqual(
+            [p.name for p in parse_selection("1-3", collections)["voice-memos"]],
+            ["20250101.m4a", "20250102.m4a", "20250103.m4a"],
+        )
+        self.assertEqual(
+            [p.name for p in parse_selection("all", collections)["voice-memos"]],
+            [r.name for r in recordings],
+        )
+
+
+class ListSelectableRecordingsTests(unittest.TestCase):
+    """list_selectable_recordings(): tylko top-level, bez wewnetrznych fragmentow .composition."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.source = Path(self.tmp.name)
+
+    def test_excludes_nested_composition_fragments(self):
+        _touch(self.source / "20250101 100000.m4a")
+        _touch(self.source / "20250102 110000.m4a")
+        fragments_dir = self.source / "20260722 141900.composition" / "fragments"
+        fragments_dir.mkdir(parents=True)
+        _touch(fragments_dir / "AAAA-fragment.m4a")
+
+        selectable = diagnostics.list_selectable_recordings(self.source)
+        recursive = diagnostics.collect_m4a_recordings(self.source)
+
+        self.assertEqual(
+            sorted(p.name for p in selectable),
+            ["20250101 100000.m4a", "20250102 110000.m4a"],
+        )
+        # collect_m4a_recordings() (uzywane przez v1/diagnostyke) widzi rowniez fragment.
+        self.assertEqual(len(recursive), 3)
+
+
+class AskSelectionIntegrationTests(unittest.TestCase):
+    """ask_selection(): te same opcje co files_selection - all / zakres / lista - i domyslne 'all'."""
+
+    def setUp(self) -> None:
+        self.recordings = [Path(f"/rec/2025010{i}.m4a") for i in range(1, 6)]
+
+    def test_all_option(self):
+        with mock.patch("builtins.input", return_value="all"), redirect_stdout(io.StringIO()):
+            selected = voice_memo_v2.ask_selection(self.recordings)
+        self.assertEqual([p.name for p in selected], [r.name for r in self.recordings])
+
+    def test_range_option(self):
+        with mock.patch("builtins.input", return_value="1-3"), redirect_stdout(io.StringIO()):
+            selected = voice_memo_v2.ask_selection(self.recordings)
+        self.assertEqual([p.name for p in selected], ["20250101.m4a", "20250102.m4a", "20250103.m4a"])
+
+    def test_explicit_list_option(self):
+        with mock.patch("builtins.input", return_value="1,3,4"), redirect_stdout(io.StringIO()):
+            selected = voice_memo_v2.ask_selection(self.recordings)
+        self.assertEqual(
+            [p.name for p in selected],
+            ["20250101.m4a", "20250103.m4a", "20250104.m4a"],
+        )
+
+    def test_empty_input_defaults_to_all(self):
+        with mock.patch("builtins.input", return_value=""), redirect_stdout(io.StringIO()):
+            selected = voice_memo_v2.ask_selection(self.recordings)
+        self.assertEqual([p.name for p in selected], [r.name for r in self.recordings])
+
+
+class DefaultDestinationForTodayTests(unittest.TestCase):
+    def test_matches_rr_mm_dd_voice_memo_pattern(self):
+        base_target = Path("/Volumes/qnap/01_todo_a/voice-memos")
+
+        result = voice_memo_v2.default_destination_for_today(base_target)
+
+        self.assertEqual(result.parent, base_target)
+        self.assertRegex(result.name, r"^\d{2}-\d{2}-\d{2}_voice_memo$")
+
+
+class SelectedFilesCopyTests(unittest.TestCase):
+    """copy_selected_files() / run_dry_run_for_selected_files(): tylko wybrane pliki, nigdy --delete."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.destination = Path(self.tmp.name) / "target"
+        self.selected = [Path("/rec/20250101 100000.m4a"), Path("/rec/20250102 110000.m4a")]
+
+    def test_build_cmd_uses_files_from_and_never_delete(self):
+        files_from = Path("/tmp/fake-list.txt")
+        cmd = sync.build_selected_files_rsync_cmd(Path("/rec"), self.destination, files_from, dry_run=False)
+
+        self.assertIn(f"--files-from={files_from}", cmd)
+        self.assertNotIn("--delete", cmd)
+
+    def test_copy_selected_files_writes_only_selected_names_and_cleans_up_tmp_file(self):
+        captured_cmd = {}
+
+        def fake_run_rsync(cmd, *args, **kwargs):
+            captured_cmd["cmd"] = cmd
+            files_from_arg = next(part for part in cmd if part.startswith("--files-from="))
+            files_from_path = Path(files_from_arg.split("=", 1)[1])
+            captured_cmd["files_from_content"] = files_from_path.read_text(encoding="utf-8")
+            captured_cmd["files_from_path"] = files_from_path
+            return True
+
+        with mock.patch("sync.run_rsync_with_live_output", side_effect=fake_run_rsync):
+            ok = sync.copy_selected_files(Path("/rec"), self.destination, self.selected)
+
+        self.assertTrue(ok)
+        self.assertTrue(self.destination.is_dir())
+        self.assertNotIn("--delete", captured_cmd["cmd"])
+        self.assertEqual(
+            captured_cmd["files_from_content"].splitlines(),
+            ["20250101 100000.m4a", "20250102 110000.m4a"],
+        )
+        # Plik tymczasowy z lista jest usuwany po uzyciu.
+        self.assertFalse(captured_cmd["files_from_path"].exists())
+
+    def test_dry_run_for_selected_files_never_deletes(self):
+        fake_result = mock.Mock(stdout="20250101 100000.m4a\n20250102 110000.m4a\n", returncode=0)
+        with mock.patch("sync.subprocess.run", return_value=fake_result) as mocked_run:
+            output = sync.run_dry_run_for_selected_files(Path("/rec"), self.destination, self.selected)
+
+        self.assertEqual(output, "20250101 100000.m4a\n20250102 110000.m4a\n")
+        called_cmd = mocked_run.call_args.args[0]
+        self.assertIn("-avn", called_cmd)
+        self.assertNotIn("--delete", called_cmd)
 
 
 if __name__ == "__main__":

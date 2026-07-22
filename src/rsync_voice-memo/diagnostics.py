@@ -28,6 +28,17 @@ def collect_m4a_recordings(source: Path) -> list[Path]:
     return sorted(p for p in source.rglob("*") if p.is_file() and p.suffix.lower() == ".m4a")
 
 
+def list_selectable_recordings(source: Path) -> list[Path]:
+    """Zwraca TYLKO nagrania na najwyzszym poziomie katalogu Voice Memos (bez rekursji).
+
+    Uzywane przez numerowana selekcje (rsync_voice-memo_v2+): w przeciwienstwie do
+    collect_m4a_recordings() (rekursywne, do liczenia/dry-run zgodnego z filtrem
+    rsync), tutaj celowo NIE wchodzimy do "*.composition/fragments/" - to
+    wewnetrzne fragmenty nagrania w edycji, nie odrebne nagrania do wyboru.
+    """
+    return sorted(p for p in source.iterdir() if p.is_file() and p.suffix.lower() == ".m4a")
+
+
 def build_diagnostics(source: Path, sample_limit: int = 5) -> VoiceMemoDiagnostics:
     """Buduje diagnostyke: liczba .m4a, do 5 przykladowych plikow, data najnowszego nagrania."""
     recordings = collect_m4a_recordings(source)
