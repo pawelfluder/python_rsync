@@ -41,16 +41,17 @@ from modules.files_selection.files_selection_v4 import (  # noqa: E402
 )
 
 
-def _load_voice_memo_v2():
-    """rsync_voice-memo_v2.py ma myslnik w nazwie - wczytanie przez importlib, nie 'import'."""
-    path = VOICE_MEMO_DIR / "rsync_voice-memo_v2.py"
-    spec = importlib.util.spec_from_file_location("rsync_voice_memo_v2_under_test", path)
+def _load_voice_memo_version(filename: str, module_name: str):
+    """<filename> ma myslnik w nazwie - wczytanie przez importlib, nie 'import'."""
+    path = VOICE_MEMO_DIR / filename
+    spec = importlib.util.spec_from_file_location(module_name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-voice_memo_v2 = _load_voice_memo_v2()
+voice_memo_v2 = _load_voice_memo_version("rsync_voice-memo_v2.py", "rsync_voice_memo_v2_under_test")
+voice_memo_v3 = _load_voice_memo_version("rsync_voice-memo_v3.py", "rsync_voice_memo_v3_under_test")
 
 
 def _touch(path: Path, mtime: float | None = None) -> None:
@@ -384,6 +385,135 @@ class SelectedFilesCopyTests(unittest.TestCase):
         called_cmd = mocked_run.call_args.args[0]
         self.assertIn("-avn", called_cmd)
         self.assertNotIn("--delete", called_cmd)
+
+
+class FindRelatedSourceItemsTests(unittest.TestCase):
+    """v3: usuwanie oryginalu musi zabrac CALY zestaw (.m4a + .composition + .waveform), nie tylko .m4a."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.source = Path(self.tmp.name)
+
+    def test_finds_composition_folder_and_waveform_for_same_stem(self):
+        recording = self.source / "20250107 110307.m4a"
+        _touch(recording)
+        composition_dir = self.source / "20250107 110307.composition" / "fragments"
+        composition_dir.mkdir(parents=True)
+        _touch(composition_dir / "inner-fragment.m4a")
+        _touch(self.source / "20250107 110307.waveform")
+        # Inne nagranie w tym samym folderze - nie powinno zostac dopasowane.
+        _touch(self.source / "20250108 090000.m4a")
+
+        related = voice_memo_v3.find_related_source_items(self.source, recording)
+
+        self.assertEqual(
+            sorted(p.name for p in related),
+            ["20250107 110307.composition", "20250107 110307.m4a", "20250107 110307.waveform"],
+        )
+
+    def test_collect_related_source_items_dedupes_across_selection(self):
+        recording_a = self.source / "20250107 110307.m4a"
+        recording_b = self.source / "20250108 090000.m4a"
+        _touch(recording_a)
+        _touch(recording_b)
+        (self.source / "20250107 110307.composition").mkdir()
+        (self.source / "20250108 090000.waveform").touch()
+
+        related = voice_memo_v3.collect_related_source_items(self.source, [recording_a, recording_b])
+
+        self.assertEqual(
+            sorted(p.name for p in related),
+            [
+                "20250107 110307.composition",
+                "20250107 110307.m4a",
+                "20250108 090000.m4a",
+                "20250108 090000.waveform",
+            ],
+        )
+        self.assertEqual(len(related), len(set(related)))  # bez duplikatow
+
+
+class DeleteRelatedSourceItemsTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.source = Path(self.tmp.name)
+
+    def test_removes_files_and_rmtrees_directories(self):
+        m4a = self.source / "20250107 110307.m4a"
+        _touch(m4a)
+        composition_dir = self.source / "20250107 110307.composition" / "fragments"
+        composition_dir.mkdir(parents=True)
+        _touch(composition_dir / "inner-fragment.m4a")
+        waveform = self.source / "20250107 110307.waveform"
+        _touch(waveform)
+
+        ok = voice_memo_v3.delete_related_source_items(
+            [m4a, self.source / "20250107 110307.composition", waveform]
+        )
+
+        self.assertTrue(ok)
+        self.assertFalse(m4a.exists())
+        self.assertFalse((self.source / "20250107 110307.composition").exists())
+        self.assertFalse(waveform.exists())
+
+
+class DeleteConfirmationGateTests(unittest.TestCase):
+    """v3: kasowanie oryginalow wymaga podwojnego 't' - domyslnie (Enter) NIC nie usuwa."""
+
+    def test_no_on_first_question_skips_deletion(self):
+        with mock.patch("builtins.input", return_value=""):
+            confirmed = voice_memo_v3.ask_delete_originals_double_confirm([Path("/rec/x.m4a")])
+        self.assertFalse(confirmed)
+
+    def test_yes_then_no_skips_deletion(self):
+        with mock.patch("builtins.input", side_effect=["t", ""]):
+            confirmed = voice_memo_v3.ask_delete_originals_double_confirm([Path("/rec/x.m4a")])
+        self.assertFalse(confirmed)
+
+    def test_yes_twice_confirms_deletion(self):
+        with mock.patch("builtins.input", side_effect=["t", "t"]):
+            confirmed = voice_memo_v3.ask_delete_originals_double_confirm([Path("/rec/x.m4a")])
+        self.assertTrue(confirmed)
+
+
+class CopyStartsWithoutConfirmationTests(unittest.TestCase):
+    """v3: po dry-run kopiowanie startuje od razu - nie ma juz pytania 'Skopiowac? (t/n)'."""
+
+    def test_main_source_has_no_copy_confirmation_prompt(self):
+        source_code = (VOICE_MEMO_DIR / "rsync_voice-memo_v3.py").read_text(encoding="utf-8")
+        self.assertNotIn("Skopiowac wybrane nagrania na QNAP", source_code)
+
+
+class VerifySelectedFilesCopiedTests(unittest.TestCase):
+    """v3: usuwanie oryginalow jest oferowane TYLKO gdy weryfikacja rozmiaru sie zgadza."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.source = Path(self.tmp.name) / "source"
+        self.destination = Path(self.tmp.name) / "destination"
+        self.source.mkdir()
+        self.destination.mkdir()
+
+    def test_matching_sizes_report_no_mismatch(self):
+        recording = self.source / "20250107 110307.m4a"
+        recording.write_bytes(b"same-bytes")
+        (self.destination / recording.name).write_bytes(b"same-bytes")
+
+        mismatched = voice_memo_v3.verify_selected_files_copied(self.destination, [recording])
+
+        self.assertEqual(mismatched, [])
+
+    def test_size_mismatch_is_reported(self):
+        recording = self.source / "20250107 110307.m4a"
+        recording.write_bytes(b"twelve-bytes")
+        (self.destination / recording.name).write_bytes(b"short")
+
+        mismatched = voice_memo_v3.verify_selected_files_copied(self.destination, [recording])
+
+        self.assertEqual(mismatched, [recording])
 
 
 if __name__ == "__main__":
