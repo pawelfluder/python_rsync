@@ -39,6 +39,7 @@ from modules.files_selection.files_selection_v4 import (  # noqa: E402
     display_files_with_numbers,
     parse_selection,
 )
+from modules.files_selection import files_selection_v5  # noqa: E402
 
 
 def _load_voice_memo_version(filename: str, module_name: str):
@@ -52,6 +53,7 @@ def _load_voice_memo_version(filename: str, module_name: str):
 
 voice_memo_v2 = _load_voice_memo_version("rsync_voice-memo_v2.py", "rsync_voice_memo_v2_under_test")
 voice_memo_v3 = _load_voice_memo_version("rsync_voice-memo_v3.py", "rsync_voice_memo_v3_under_test")
+voice_memo_v4 = _load_voice_memo_version("rsync_voice-memo_v4.py", "rsync_voice_memo_v4_under_test")
 
 
 def _touch(path: Path, mtime: float | None = None) -> None:
@@ -514,6 +516,62 @@ class VerifySelectedFilesCopiedTests(unittest.TestCase):
         mismatched = voice_memo_v3.verify_selected_files_copied(self.destination, [recording])
 
         self.assertEqual(mismatched, [recording])
+
+
+class FilesSelectionV5NoReorderTests(unittest.TestCase):
+    """v5: numeruje/wypisuje w kolejnosci podanej przez wywolujacego - zero reorganizacji."""
+
+    def test_numbering_and_print_order_follow_input_order_exactly(self):
+        # Wejscie juz "najnowszy pierwszy" (tak jak v4 w rsync_voice-memo przygotowuje liste).
+        newest_first = [Path("/rec/20250105.m4a"), Path("/rec/20250104.m4a"), Path("/rec/20250101.m4a")]
+        collections = {"voice-memos": newest_first}
+
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            files_selection_v5.display_files_with_numbers(collections, None, None, show_durations=False)
+        output_lines = [line for line in buffer.getvalue().splitlines() if line.strip().startswith("(")]
+
+        self.assertEqual(
+            output_lines,
+            ["    (1) 20250105.m4a", "    (2) 20250104.m4a", "    (3) 20250101.m4a"],
+        )
+        self.assertEqual(
+            [p.name for p in files_selection_v5.parse_selection("1-2", collections)["voice-memos"]],
+            ["20250105.m4a", "20250104.m4a"],
+        )
+
+
+class SelectionNumberingBugfixTests(unittest.TestCase):
+    """v4 (rsync_voice-memo): naprawia bug - '1-3' musi wybrac 3 NAJNOWSZE nagrania (widoczne na
+    gorze), nie 3 najstarsze jak w v2/v3."""
+
+    def setUp(self) -> None:
+        # list_selectable_recordings() zwraca chronologicznie rosnaco - to jest jej realny kontrakt.
+        self.recordings = [Path(f"/rec/2025010{i}.m4a") for i in range(1, 6)]
+
+    def test_range_1_3_selects_three_newest_not_oldest(self):
+        with mock.patch("builtins.input", return_value="1-3"), redirect_stdout(io.StringIO()):
+            selected = voice_memo_v4.ask_selection(self.recordings)
+
+        self.assertEqual(
+            [p.name for p in selected],
+            ["20250105.m4a", "20250104.m4a", "20250103.m4a"],
+        )
+
+    def test_all_still_returns_every_recording(self):
+        with mock.patch("builtins.input", return_value="all"), redirect_stdout(io.StringIO()):
+            selected = voice_memo_v4.ask_selection(self.recordings)
+
+        self.assertEqual(len(selected), 5)
+
+    def test_number_1_is_printed_at_top_as_the_newest_file(self):
+        buffer = io.StringIO()
+        with mock.patch("builtins.input", return_value="all"), redirect_stdout(buffer):
+            voice_memo_v4.ask_selection(self.recordings)
+
+        output_lines = [line for line in buffer.getvalue().splitlines() if line.strip().startswith("(")]
+        self.assertEqual(output_lines[0].strip(), "(1) 20250105.m4a")
+        self.assertEqual(output_lines[-1].strip(), "(5) 20250101.m4a")
 
 
 if __name__ == "__main__":
