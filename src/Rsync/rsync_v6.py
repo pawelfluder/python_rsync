@@ -1,10 +1,12 @@
 """
-rsync_sync_v6.py - Synchronizacja plikow do QNAP przy uzyciu rsync (podglad pelnych sciezek docelowych)
+rsync_sync_v6.py - Synchronizacja plikow do QNAP przy uzyciu rsync (pytanie o kazda sciezke osobno)
 
 Zmiany wzgledem v5:
-- get_target_from_user() dodatkowo wypisuje pelne sciezki docelowe (target_base + nazwa
-  folderu/pliku ze source z input.yaml), np. dla source /Volumes/Untitled/ump i target
-  bazowego /Volumes/qnap/01_todo_a wypisze /Volumes/qnap/01_todo_a/ump
+- Zamiast jednego pytania o wspolny target_base, get_target_paths_from_user() pyta
+  osobno o kazda sciezke source z input.yaml, pokazujac jako domyslna wartosc
+  DEFAULT_QNAP_TARGET/nazwa (np. dla source /Volumes/Untitled/ump domyslnie
+  zaproponuje /Volumes/qnap/01_todo_a/ump) - Enter akceptuje domyslna, albo mozna
+  podac wlasna sciezke docelowa dla tego konkretnego wpisu.
 """
 
 import os
@@ -375,10 +377,8 @@ def verify_folder_sync_size_only(source_folder: Path, destination_folder: Path) 
     return True
 
 
-def sync_file(source_file: Path, target_base: Path) -> bool:
+def sync_file(source_file: Path, destination_file: Path) -> bool:
     """Synchronizuje pojedynczy plik bez --delete."""
-    destination_file = target_base / source_file.name
-
     valid, reason = validate_pair(source_file, destination_file)
     if not valid:
         print(f"❌ Walidacja nieudana: {reason}", flush=True)
@@ -388,8 +388,8 @@ def sync_file(source_file: Path, target_base: Path) -> bool:
         print("  ⏭️ Pomijam na zyczenie uzytkownika", flush=True)
         return False
 
-    ensure_nas_available(target_base.parent)
-    target_base.mkdir(parents=True, exist_ok=True)
+    ensure_nas_available(destination_file.parent)
+    destination_file.parent.mkdir(parents=True, exist_ok=True)
 
     progress_flags = build_rsync_progress_flags()
     if len(progress_flags) == 1:
@@ -402,10 +402,8 @@ def sync_file(source_file: Path, target_base: Path) -> bool:
     return verify_file_sync(source_file, destination_file)
 
 
-def sync_folder(source_folder: Path, target_base: Path) -> bool:
+def sync_folder(source_folder: Path, destination_folder: Path) -> bool:
     """Synchronizuje folder bez --delete, a kasowanie dodatkow robi dopiero po dry-run."""
-    destination_folder = target_base / source_folder.name
-
     valid, reason = validate_pair(source_folder, destination_folder)
     if not valid:
         print(f"❌ Walidacja nieudana: {reason}", flush=True)
@@ -415,7 +413,7 @@ def sync_folder(source_folder: Path, target_base: Path) -> bool:
         print("  ⏭️ Pomijam na zyczenie uzytkownika", flush=True)
         return False
 
-    ensure_nas_available(target_base.parent)
+    ensure_nas_available(destination_folder.parent)
 
     print("\n🔎 Preflight target folder", flush=True)
     if not preflight_target_folder(destination_folder):
@@ -499,19 +497,18 @@ def ask_delete_sources_double_confirm(source_paths: list[Path]) -> bool:
     return True
 
 
-def sync_collection(collection_name: str, paths: list[Path], target_base: Path) -> tuple[bool, list[Path]]:
-    """Synchronizuje kolekcje i zwraca status + faktycznie przetworzone zrodla."""
+def sync_collection(collection_name: str, pairs: list[tuple[Path, Path]]) -> tuple[bool, list[Path]]:
+    """Synchronizuje kolekcje (pary source -> destination) i zwraca status + faktycznie przetworzone zrodla."""
     print(f"\n📂 Synchronizacja kolekcji: {collection_name}", flush=True)
-    ensure_nas_available(target_base.parent)
 
     success = True
     synced_sources: list[Path] = []
 
-    for source_path in paths:
+    for source_path, destination_path in pairs:
         if source_path.is_file():
-            item_ok = sync_file(source_path, target_base)
+            item_ok = sync_file(source_path, destination_path)
         elif source_path.is_dir():
-            item_ok = sync_folder(source_path, target_base)
+            item_ok = sync_folder(source_path, destination_path)
         else:
             print(f"⚠️ Nieznany typ lub brak wpisu: {source_path}", flush=True)
             item_ok = False
@@ -524,25 +521,18 @@ def sync_collection(collection_name: str, paths: list[Path], target_base: Path) 
     return success, synced_sources
 
 
-def print_resulting_target_paths(collections: dict[str, list[Path]], target_base: Path) -> None:
-    """Wypisuje pelne sciezki docelowe (target_base + nazwa z source) dla wszystkich wpisow z input.yaml."""
-    print(f"\n📌 Wynikowe sciezki docelowe (na bazie: {target_base}):", flush=True)
+def get_target_paths_from_user(collections: dict[str, list[Path]]) -> dict[str, list[tuple[Path, Path]]]:
+    """Dla kazdej sciezki source pyta o docelowa sciezke (domyslnie: DEFAULT_QNAP_TARGET/nazwa)."""
+    resolved: dict[str, list[tuple[Path, Path]]] = {}
     for collection_name, source_paths in collections.items():
+        pairs: list[tuple[Path, Path]] = []
         for source_path in source_paths:
-            print(f"   {source_path}  ->  {target_base / source_path.name}", flush=True)
-
-
-def get_target_from_user(collections: dict[str, list[Path]]) -> Path:
-    """Pobiera sciezke docelowa od uzytkownika i pokazuje pelne sciezki wynikowe."""
-    print_resulting_target_paths(collections, DEFAULT_QNAP_TARGET)
-
-    user_input = input(f"\n📁 Podaj sciezke docelowa na QNAP (domyslnie: {DEFAULT_QNAP_TARGET}): ").strip()
-    if not user_input:
-        return DEFAULT_QNAP_TARGET
-
-    target_base = Path(user_input).expanduser()
-    print_resulting_target_paths(collections, target_base)
-    return target_base
+            default_target = DEFAULT_QNAP_TARGET / source_path.name
+            user_input = input(f"\n📁 {source_path}\n   -> Podaj sciezke docelowa (domyslnie: {default_target}): ").strip()
+            target_path = Path(user_input).expanduser() if user_input else default_target
+            pairs.append((source_path, target_path))
+        resolved[collection_name] = pairs
+    return resolved
 
 
 def main() -> None:
@@ -563,22 +553,16 @@ def main() -> None:
         print("⚠️ Brak kolekcji do synchronizacji w pliku YAML", flush=True)
         return
 
-    target_base = get_target_from_user(collections)
-    if not str(target_base).strip() or target_base.resolve() == Path("/"):
-        print("❌ Niepoprawny target bazowy", flush=True)
-        return
+    resolved_collections = get_target_paths_from_user(collections)
 
-    print(f"\n🔍 Sprawdzanie dostepnosci QNAP: {target_base.parent}", flush=True)
-    ensure_nas_available(target_base.parent)
-    target_base.mkdir(parents=True, exist_ok=True)
-
-    print(f"\n🚀 Rozpoczynanie synchronizacji do: {target_base}", flush=True)
+    print(f"\n🔍 Sprawdzanie dostepnosci QNAP: {DEFAULT_QNAP_TARGET.parent}", flush=True)
+    ensure_nas_available(DEFAULT_QNAP_TARGET.parent)
 
     overall_success = True
     all_synced_sources: list[Path] = []
 
-    for collection_name, source_paths in collections.items():
-        collection_ok, synced_sources = sync_collection(collection_name, source_paths, target_base)
+    for collection_name, pairs in resolved_collections.items():
+        collection_ok, synced_sources = sync_collection(collection_name, pairs)
         all_synced_sources.extend(synced_sources)
         if not collection_ok:
             overall_success = False
