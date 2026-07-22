@@ -1,0 +1,72 @@
+# rsync_v5.py - Bug Fix: Smart Confirmation
+
+## 🐛 Bug Description (v3)
+Skrypt zawsze pytał o potwierdzenie synchronizacji, nawet gdy target folder **nie istniał** lub był **pusty**. To było niepotrzebne i irytujące przy pierwszej synchronizacji.
+
+### Przykład problemu (v3):
+```
+🔐 Potwierdzenie pary synchronizacji:
+   Source: /Users/pawelfluder/Downloads/AA_old
+   Target: /Volumes/qnap/01_todo_a/AA_old
+   Kontynuowac te synchronizacje? (t/n, domyslnie n): 
+```
+Target nie istnieje (nowy folder), ale skrypt i tak pyta o potwierdzenie.
+
+## ✅ Fix (v5)
+Funkcja `confirm_pair()` teraz sprawdza czy target istnieje i czy ma dane:
+- **Target nie istnieje**: Automatycznie kontynuuje (bezpieczne - nowy folder)
+- **Target istnieje ale jest pusty**: Automatycznie kontynuuje (bezpieczne - pusty folder)
+- **Target istnieje i ma dane**: Pyta o potwierdzenie (ochrona przed nadpisaniem)
+
+### Przykład po fixie (v5):
+```
+🔐 Potwierdzenie pary synchronizacji:
+   Source: /Users/pawelfluder/Downloads/AA_old
+   Target: /Volumes/qnap/01_todo_a/AA_old
+   🟢 Target nie istnieje (nowy folder) - kontynuacja automatyczna
+```
+
+## 📝 Code Changes
+
+### Before (v3):
+```python
+def confirm_pair(source_path: Path, target_path: Path) -> bool:
+    print("\n🔐 Potwierdzenie pary synchronizacji:", flush=True)
+    print(f"   Source: {source_path.resolve()}", flush=True)
+    print(f"   Target: {target_path.resolve()}", flush=True)
+    return ask_yes_no_default_no("   Kontynuowac te synchronizacje? (t/n, domyslnie n): ")
+```
+
+### After (v5):
+```python
+def confirm_pair(source_path: Path, target_path: Path) -> bool:
+    target_resolved = target_path.resolve()
+    
+    # Check if target exists and has data
+    target_has_data = False
+    if target_resolved.exists():
+        try:
+            has_entries = next(target_resolved.iterdir(), None) is not None
+            target_has_data = has_entries
+        except (PermissionError, OSError):
+            target_has_data = True
+    
+    print("\n🔐 Potwierdzenie pary synchronizacji:", flush=True)
+    print(f"   Source: {source_path.resolve()}", flush=True)
+    print(f"   Target: {target_path.resolve()}", flush=True)
+    
+    if not target_has_data:
+        if target_has_data:
+            print("   🟢 Target istnieje ale jest pusty - kontynuacja automatyczna", flush=True)
+        else:
+            print("   🟢 Target nie istnieje (nowy folder) - kontynuacja automatyczna", flush=True)
+        return True
+    
+    print("   ⚠️ Target istnieje i zawiera dane!", flush=True)
+    return ask_yes_no_default_no("   Kontynuowac te synchronizacje? (t/n, domyslnie n): ")
+```
+
+## 🎯 Impact
+- Pierwsza synchronizacja (nowy target) - **nie pyta**, od razu startuje
+- Synchronizacja do pustego folderu - **nie pyta**, od razu startuje
+- Synchronizacja do folderu z danymi - **pyta** (ochrona przed przypadkowym nadpisaniem)

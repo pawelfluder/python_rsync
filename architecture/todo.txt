@@ -1,0 +1,6 @@
+//
+    zminic tak/nie na yes/no
+
+//
+    rownolegle wiele folderow i potem zbiorczo pytania
+    

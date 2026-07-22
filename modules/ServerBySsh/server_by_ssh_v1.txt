@@ -1,0 +1,15 @@
+//description
+    - skrypt umożliwia zdalne wykonywanie poleceń na serwerze qnap za pomocą protokołu ssh
+    - użytkownik podaje ścieżkę, do której należy przejść (cd), oraz polecenie do wykonania
+    - hasło do serwera jest wprowadzane dynamicznie podczas uruchamiania skryptu, co zwiększa bezpieczeństwo
+    - skrypt obsługuje połączenie ssh, wykonuje polecenie i zwraca wynik oraz ewentualne błędy
+    - funkcje zostały rozdzielone na pobieranie hasła i wykonywanie polecenia z podanym hasłem
+
+//prompt
+    - stwórz skrypt w pythonie, który umożliwia zdalne wykonywanie poleceń na serwerze qnap za pomocą ssh
+    - skrypt powinien pytać użytkownika o hasło podczas uruchamiania, zamiast przechowywać je w kodzie
+    - użytkownik powinien podać ścieżkę, do której należy przejść (cd), oraz polecenie do wykonania
+    - skrypt powinien obsługiwać połączenie ssh, wykonać polecenie i zwrócić wynik oraz ewentualne błędy
+    - użyj biblioteki `paramiko` do obsługi połączenia ssh
+    - rozdziel funkcje na pobieranie hasła i wykonywanie polecenia z podanym hasłem
+    - dodaj obsługę błędów, aby wyświetlić komunikaty w przypadku problemów z połączeniem lub wykonaniem polecenia

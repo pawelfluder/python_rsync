@@ -1,0 +1,68 @@
+// rsync_v3.py - dokumentacja zmian
+    //01; Co zmieniono względem v2
+        - Utworzono nowy skrypt v3 bez nadpisywania v2.
+        - Zmieniono flow synchronizacji na bezpieczny:
+        - normalny sync zawsze bez --delete,
+        - --delete tylko po synchronizacji i tylko po dry-run + potwierdzeniu użytkownika.
+        - Dodano walidację pary source/target przed każdą synchronizacją.
+        - Dodano preflight target folder (szybkie wykrycie pomyłki w ścieżce docelowej).
+        - Dodano końcowe, podwójne potwierdzenie usuwania źródeł.
+
+    //02; Najważniejsze reguły bezpieczeństwa w v3
+        - Blokada pustych ścieżek source/target.
+        - Blokada source='/' i target='/' .
+        - Blokada podejrzanie krótkich ścieżek destrukcyjnych.
+        - Blokada sytuacji source == target.
+        - Zawsze pokazanie finalnego source i target przed startem.
+        - Potwierdzenie startu z domyślną odpowiedzią NIE.
+
+    //03; Preflight target folder
+        - Jeśli target nie istnieje: tworzenie + komunikat:
+        "0 files: target folder was newly created"
+        - Jeśli target pusty: komunikat:
+        "0 files: target folder was empty"
+        - Jeśli target niepusty:
+        - ostrzeżenie "Target folder is not empty.",
+        - szybka klasyfikacja wielkości,
+        - sample wpisów (pierwsze elementy),
+        - decyzja użytkownika: Continue as resume / Cancel.
+
+    //04Szybka klasyfikacja wielkości target
+    - count_files_limited(path, limit=1000):
+    - liczenie rekurencyjne,
+    - stop po osiągnięciu limitu,
+    - zwrot (count, reached_limit).
+    - print_target_size_classification(target, newly_created=False):
+    - 0 files: newly created,
+    - 0 files: empty,
+    - 1000+ files: potencjalnie trudny manualny przegląd,
+    - albo dokładna liczba dla mniejszych zbiorów.
+
+    //05; Delete flow po synchronizacji
+    - Po zwykłym sync uruchamiany jest dry-run z --delete.
+    - Jeśli są dodatkowe wpisy tylko w target:
+    - pokazanie listy,
+    - pytanie o usunięcie (domyślnie NIE),
+    - realne --delete tylko po potwierdzeniu.
+    - Jeśli brak dodatkowych wpisów: brak pytania o kasowanie.
+
+    //06; Końcowe kasowanie źródeł
+        - Na samym końcu skrypt zawsze pyta, czy usunąć źródła.
+        - Usunięcie jest możliwe wyłącznie po podwójnym potwierdzeniu (2/2).
+
+7) Kompatybilność rsync (macOS)
+- Zachowano kompatybilność jak w v2:
+  - wykrywanie wersji rsync przez "rsync --version",
+  - dla rsync 2.6.9 (domyślny macOS): bez --info=progress2/--info=name0,
+  - dla rsync 3.x/4.x: użycie rozszerzonych flag postępu.
+
+8) Weryfikacja transferu
+- Weryfikacja folderu po synchronizacji działa w szybkim trybie size-only.
+- Celem jest wydajne wykrycie brakujących plików lub innego rozmiaru.
+
+9) Informacja dla kolejnych iteracji AI
+- v3 jest wersją "safe-first":
+  - maksymalnie ogranicza ryzyko przypadkowego kasowania,
+  - wymusza decyzje użytkownika w punktach krytycznych,
+  - rozdziela normalny sync od procesu czyszczenia target.
+- Jeśli dodawany będzie tryb automatyczny (bez pytań), musi pozostać oddzielny i jawnie włączany przez użytkownika.

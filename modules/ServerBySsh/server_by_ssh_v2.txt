@@ -1,0 +1,15 @@
+//description
+    - skrypt umożliwia zdalne wykonywanie poleceń na serwerze qnap za pomocą protokołu ssh
+    - dodano pobieranie hasła z `REPO_ROOT/.env` (zmienna `server_password`) zanim skrypt zapyta użytkownika
+    - dodano fallback do zmiennej środowiskowej `server_password`
+    - repo root jest wykrywany jako dwa poziomy wyżej od pliku skryptu (SCRIPT_DIR.parents[1])
+     
+//prompt
+    - stwórz skrypt w pythonie, który umożliwia zdalne wykonywanie poleceń na serwerze qnap za pomocą ssh
+    - użyj biblioteki `paramiko` do obsługi połączenia ssh
+    - zrób osobną funkcję `get_server_password()`
+    - w `get_server_password()` przed promptem dodaj: odczyt `server_password` z `REPO_ROOT/.env`, a jeśli brak to z `os.getenv("server_password")`
+    - REPO_ROOT wylicz jako dwa poziomy wyżej od pliku skryptu: `SCRIPT_DIR = Path(__file__).resolve().parent`, `REPO_ROOT = SCRIPT_DIR.parents[1]`
+    - jeśli nie ma hasła w żadnym z tych miejsc, dopiero wtedy użyj `getpass.getpass`
+    - dodaj funkcję `run_remote_command_with_password(password, remote_dir, command)` która łączy się przez SSH, robi `cd remote_dir` i wykonuje polecenie
+    - dodaj obsługę błędów: wypisz stderr gdy polecenie zwróci błąd i zamknij połączenie w bloku `finally`

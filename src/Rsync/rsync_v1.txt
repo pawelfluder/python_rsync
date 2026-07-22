@@ -1,0 +1,45 @@
+// Opis skryptu
+    - Skrypt: rsync_sync_v1.py
+    - Cel: Synchronizacja plików z komputera Mac do folderu na QNAP przy użyciu rsync
+    - Wykorzystuje konfigurację YAML z AA_Input/input.yaml
+    - Automatycznie obsługuje przerwy w połączeniu z QNAP
+
+// Nowe funkcje
+    - Wczytywanie konfiguracji z YAML zgodnie z files_collections_yaml_parsing_v1.py
+    - Obsługa dwóch wariantów:
+        1) Nazwana kolekcja z listą plików
+        2) Ścieżka do folderu (wszystkie pliki z folderu)
+    - Interaktywne pytanie o folder docelowy (domyślnie /Volumes/qnap/01_todo_a)
+    - Wykorzystanie retry_network_drive_v2.py do ponownego montowania QNAP
+    - Synchronizacja pojedynczych plików i całych folderów
+    - Obsługa błędów i kontynuacja przy problemach
+
+// Struktura działania
+    1. Wczytaj AA_Input/input.yaml
+    2. Zapytaj użytkownika o ścieżkę docelową
+    3. Sprawdź dostępność QNAP (z ponownymi próbami)
+    4. Dla każdej kolekcji z YAML:
+        - Utwórz podfolder w folderze docelowym
+        - Synchronizuj pliki/foldery z kolekcji
+    5. Podsumuj wyniki
+
+// Przykład użycia
+    python 03_scripts/src/RsyncSync/rsync_sync_v1.py
+
+// Przykład pliku input.yaml
+    # Synchronizacja wybranych plików
+    - do_sync:
+        - /Users/pawelfluder/Documents/file1.txt
+        - /Users/pawelfluder/Music/song.mp3
+
+    # Synchronizacja całego folderu
+    - /Users/pawelfluder/Downloads/music_folder
+
+// Informacje dla AI
+    - Skrypt jest zaprojektowany zgodnie z python-style.md
+    - Używa REPO_ROOT do odwoływania się do ścieżek w workspace
+    - Może być uruchamiany bezpośrednio z VSCode lub importowany jako moduł
+    - Wykorzystuje istniejące moduły: files_collections_yaml_parsing_v1.py i retry_network_drive_v2.py
+    - W przypadku błędów sieciowych automatycznie próbuje ponownie podłączyć QNAP
+    - Domyślna ścieżka docelowa: /Volumes/qnap/01_todo_a
+    - Można podać własną ścieżkę podczas uruchamiania

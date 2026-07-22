@@ -1,0 +1,20 @@
+//script description
+    - skrypt opisywany to files_collections_yaml_parsing_v1.py
+    - ma za zadanie wczytać nazwane kolekcje sciezek do plików
+    - mamy dwa warianty:
+    - 1) po pauzie nazwa kolekcji a pod nią kolejny słownik ze sciezkami do plikow
+    - 2) po pauzie sciezka do folderu i wtedy nazwą jest nazwa folderu, a plikami wszytskie pliki z tego folderu
+
+//przykład poprawny pliku yaml
+    # nazwana kolekcja roznych plikow z roznych lokalizacji
+    - 25-10-09_to-listen:
+        - qnap/02_refrenced/szkolenie.mp3
+        - qnap/03_thinking/worthiness.mp3
+        - qnap/03_thinking/think-and-act.mp3
+
+    # kolejna kolekcja gdzie nazwa bedzie nazwa folderu
+    - qnap/04_procedury
+
+    # kolejna kolekcja gdzie nazwa bedzie nazwa folderu
+    - qnap/07_breakdown
+    
