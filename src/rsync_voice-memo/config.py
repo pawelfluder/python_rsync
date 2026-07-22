@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-DEFAULT_TARGET = Path("/Volumes/qnap/01_todo_a/voice-memos")
+DEFAULT_TARGET = Path("/Volumes/qnap/01_todo_a")
 
 
 def load_voice_memo_target(yaml_path: Path) -> Path:

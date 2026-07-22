@@ -228,6 +228,11 @@ class ConfigTests(unittest.TestCase):
 
         self.assertEqual(target, Path("/Volumes/qnap/custom-voice-memos"))
 
+    def test_default_target_has_no_intermediate_voice_memos_folder(self):
+        # Nie chcemy posredniego folderu "voice-memos" - nagrania ida wprost do 01_todo_a.
+        self.assertEqual(config.DEFAULT_TARGET, Path("/Volumes/qnap/01_todo_a"))
+        self.assertNotIn("voice-memos", config.DEFAULT_TARGET.parts)
+
     def test_missing_yaml_falls_back_to_default(self):
         missing = Path(self.tmp.name) / "does-not-exist.yaml"
 
@@ -330,7 +335,7 @@ class AskSelectionIntegrationTests(unittest.TestCase):
 
 class DefaultDestinationForTodayTests(unittest.TestCase):
     def test_matches_rr_mm_dd_voice_memo_pattern(self):
-        base_target = Path("/Volumes/qnap/01_todo_a/voice-memos")
+        base_target = Path("/Volumes/qnap/01_todo_a")
 
         result = voice_memo_v2.default_destination_for_today(base_target)
 

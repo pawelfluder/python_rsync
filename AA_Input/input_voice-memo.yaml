@@ -1,4 +1,4 @@
 # Konfiguracja celu na QNAP dla rsync_voice-memo (ten sam prosty format YAML jak input.yaml).
 # Source NIE jest tu podawany - jest wykrywany automatycznie (lokalny katalog Voice Memos
 # zsynchronizowany przez iCloud), zgodnie z rsync_voice-memo/discovery.py.
-target: /Volumes/qnap/01_todo_a/voice-memos
+target: /Volumes/qnap/01_todo_a

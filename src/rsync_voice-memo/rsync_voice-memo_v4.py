@@ -56,7 +56,7 @@ def ask_selection(recordings: list[Path]) -> list[Path]:
 
 
 def default_destination_for_today(base_target: Path) -> Path:
-    """<base_target>/<RR-MM-DD>_voice_memo, np. /Volumes/qnap/.../voice-memos/26-07-22_voice_memo."""
+    """<base_target>/<RR-MM-DD>_voice_memo, np. /Volumes/qnap/01_todo_a/26-07-22_voice_memo."""
     date_str = datetime.now().strftime("%y-%m-%d")
     return base_target / f"{date_str}_voice_memo"
 
