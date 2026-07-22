@@ -19,13 +19,20 @@ from pathlib import Path
 # Konfiguracja sciezek repozytorium
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[1]
+PYTHON_MODULES_ROOT = REPO_ROOT.parent / "python_modules"
 
-# Dodanie repozytorium do sciezki importow
+# Dodanie repozytorium i wspolnego python_modules do sciezki importow.
+# Oba foldery "modules/" (tu i w python_modules) laczą się w jeden namespace
+# package (PEP 420, brak __init__.py) - stad ten sam "from modules...." import
+# dziala niezaleznie od tego, w ktorym repo dany podmodul faktycznie lezy.
 sys.path.append(str(REPO_ROOT))
+sys.path.append(str(PYTHON_MODULES_ROOT))
 
 # Importy z modulow projektu
 from modules.YamlParsing.files_collections_yaml_parsing_v1 import load_file_collections_from_yaml
-from modules.RetryNetworkDrive.retry_network_drive_v2 import ensure_nas_available
+from modules.RetryNetworkDrive.retry_network_drive import ensure_nas_available, load_env_file
+
+load_env_file(REPO_ROOT / ".env")
 
 # Stale
 DEFAULT_QNAP_TARGET = Path("/Volumes/qnap/01_todo_a")
@@ -388,7 +395,7 @@ def sync_file(source_file: Path, destination_file: Path) -> bool:
         print("  ⏭️ Pomijam na zyczenie uzytkownika", flush=True)
         return False
 
-    ensure_nas_available(destination_file.parent)
+    ensure_nas_available()
     destination_file.parent.mkdir(parents=True, exist_ok=True)
 
     progress_flags = build_rsync_progress_flags()
@@ -413,7 +420,7 @@ def sync_folder(source_folder: Path, destination_folder: Path) -> bool:
         print("  ⏭️ Pomijam na zyczenie uzytkownika", flush=True)
         return False
 
-    ensure_nas_available(destination_folder.parent)
+    ensure_nas_available()
 
     print("\n🔎 Preflight target folder", flush=True)
     if not preflight_target_folder(destination_folder):
