@@ -14,7 +14,10 @@ for _path in (REPO_ROOT, PYTHON_MODULES_ROOT):
     if str(_path) not in sys.path:
         sys.path.append(str(_path))
 
-from modules.RetryNetworkDrive.retry_network_drive import (  # noqa: E402
+# python_modules/modules/retry_network_drive/ trzyma cala historie wersji
+# (_v1.py ... _v6.py, jak retry_network_drive_v*.py w innych repo) - v6 to
+# aktualna, wspolna wersja bez repo-specyficznego bootstrappingu .env.
+from modules.retry_network_drive.retry_network_drive_v6 import (  # noqa: E402
     NasAuthError,
     ensure_nas_available,
     load_env_file,
