@@ -1,14 +1,4 @@
-"""
-rsync_files_v1.py - Synchronizacja plikow do QNAP przy uzyciu rsync (pytanie o kazda sciezke osobno).
-
-Nastepca src/Rsync/rsync_v6.py po wydzieleniu wspolnej logiki do rsync_core - zachowuje
-dokladnie to samo zachowanie: AA_Input/input.yaml, kolekcje YAML, pytanie o cel dla
-kazdego source, domyslny cel /Volumes/qnap/01_todo_a, obecne potwierdzenia i opcjonalne
-usuwanie zrodel.
-
-Uruchamiane przez main.py (opakowanie, ktore zawsze wywoluje najnowsza wersje
-rsync_files_vN.py w tym katalogu) - patrz rsync_core/versioning.py.
-"""
+# Opis: rsync_files_v1.txt
 
 import shutil
 import sys

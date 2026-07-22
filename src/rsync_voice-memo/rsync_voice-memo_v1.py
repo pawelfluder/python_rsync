@@ -1,13 +1,4 @@
-"""
-rsync_voice-memo_v1.py - Kopiuje nagrania Voice Memos zsynchronizowane przez iCloud na QNAP.
-
-Nie laczy sie z iPhonem - korzysta wylacznie z lokalnego katalogu, do ktorego aplikacja
-Voice Memos na Macu juz zsynchronizowala nagrania przez iCloud. Kopiowanie idzie przez
-wspolny rsync_core (bez SQLite, bez manifestu, bez stagingu, bez lokalnego folderu eksportu).
-
-Uruchamiane przez main.py (opakowanie, ktore zawsze wywoluje najnowsza wersje
-rsync_voice-memo_vN.py w tym katalogu) - patrz rsync_core/versioning.py.
-"""
+# Opis: rsync_voice-memo_v1.txt
 
 import sys
 from pathlib import Path

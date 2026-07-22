@@ -1,32 +1,4 @@
-"""
-rsync_voice-memo_v3.py - jak v2, ale bez pytania "Skopiowac? (t/n)" i z opcja usuniecia oryginalow.
-
-Nowosci wzgledem v2:
-- Po dry-run kopiowanie startuje OD RAZU, bez dodatkowego pytania "Skopiowac
-  wybrane nagrania na QNAP? (t/n, domyslnie n)" - ten krok byl zbedny, bo
-  wybor plikow (ask_selection) i dry-run juz sa swiadoma decyzja uzytkownika.
-- Po kopiowaniu weryfikuje rozmiar KAZDEGO skopiowanego pliku (rsync_core.preflight
-  .verify_file_sync - to samo, czego uzywa rsync_files) i TYLKO jesli wszystko
-  sie zgadza, pyta (podwojne potwierdzenie, domyslnie NIE na obu) czy usunac
-  oryginalne nagrania z Voice Memos na Macu.
-- Usuwanie jest KOMPLETNE dla kazdego wybranego nagrania: Voice Memos trzyma
-  obok pliku "X.m4a" powiazane resztki o tym samym rdzeniu nazwy (znaczniku
-  czasu) - folder "X.composition" (z wewnetrznymi fragmentami edycji) i/lub
-  plik "X.waveform" (cache waveformu) - potwierdzone live na tym Macu. Usuwane
-  jest zawsze CALE zestaw (m4a + composition + waveform + wszystko inne z tym
-  samym rdzeniem), nigdy tylko sam .m4a, zeby nie zostawiac osierocalych
-  resztek. Nigdy caly folder Recordings, nigdy bez podwojnego potwierdzenia,
-  nigdy jesli weryfikacja kopii wykryla cokolwiek niezgodne.
-
-Wszystko inne jak w v2: numerowana selekcja (all / zakres / lista) przez
-files_selection_v4 z python_modules, cel na QNAP z domyslnym
-<target>/<RR-MM-DD>_voice_memo, kopiowanie tylko wybranych plikow (--files-from,
-nigdy --delete), brak polaczenia z iPhonem, brak SQLite, brak modyfikacji
-source przed jawnym potwierdzeniem usuniecia.
-
-Uruchamiane przez main.py (opakowanie, ktore zawsze wywoluje najnowsza wersje
-rsync_voice-memo_vN.py w tym katalogu) - patrz rsync_core/versioning.py.
-"""
+# Opis: rsync_voice-memo_v3.txt
 
 import shutil
 import sys

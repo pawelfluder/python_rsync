@@ -1,25 +1,4 @@
-"""
-rsync_voice-memo_v2.py - jak v1, ale z numerowana selekcja nagran do skopiowania.
-
-Nowosci wzgledem v1:
-- Przed kopiowaniem wypisuje wszystkie top-level nagrania z numerami (najnowsze
-  na gorze - patrz modules.files_selection.files_selection_v4 w python_modules)
-  i pyta o wybor: "all" / zakres ("1-3") / lista ("1,3,4,7") - te same opcje co w
-  modules/files_selection, uzyte 1:1 (build_file_index/parse_selection bez zmian,
-  wiec numer zawsze wskazuje ten sam plik).
-- Cel na QNAP pyta sie tak samo jak w rsync_files (input() z domyslna wartoscia
-  do zaakceptowania Enterem), a domyslna sciezka to teraz
-  <target z input_voice-memo.yaml>/<RR-MM-DD>_voice_memo (np. 26-07-22_voice_memo),
-  zamiast zawsze tego samego celu bazowego jak w v1.
-- Kopiuje TYLKO wybrane pliki (rsync --files-from), nie caly folder i nigdy
-  --delete - patrz sync.copy_selected_files().
-
-Nie laczy sie z iPhonem, nie czyta baz SQLite Voice Memos, nie modyfikuje source -
-te zasady z v1 sa bez zmian.
-
-Uruchamiane przez main.py (opakowanie, ktore zawsze wywoluje najnowsza wersje
-rsync_voice-memo_vN.py w tym katalogu) - patrz rsync_core/versioning.py.
-"""
+# Opis: rsync_voice-memo_v2.txt
 
 import sys
 from datetime import datetime

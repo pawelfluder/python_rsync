@@ -1,30 +1,4 @@
-"""
-rsync_voice-memo_v4.py - jak v3, ale naprawia bug numeracji: "1-3" wybieralo najstarsze
-nagrania zamiast trzech widocznych na gorze (najnowszych).
-
-Bug w v3 (potwierdzony live): v3 uzywal files_selection_v4, ktory numeruje pliki w
-oryginalnej (chronologicznej) kolejnosci - (1) = najstarszy - i TYLKO odwraca
-kolejnosc WYPISYWANIA, zeby najnowszy byl widoczny na gorze. Efekt: uzytkownik
-widzial najnowsze nagrania na gorze, ale "1-3" (naturalnie odczytane jako "trzy z
-gory") wybieralo trzy NAJSTARSZE nagrania (numery 1,2,3 z chronologicznej
-numeracji) - odwrotnie niz oczekiwane.
-
-Naprawa w v4: ask_selection() przekazuje recordings juz ODWROCONE (najnowszy
-pierwszy) do files_selection_v5 (z python_modules), ktory numeruje i wypisuje w
-kolejnosci, w jakiej dostal pliki, bez wlasnej reorganizacji. Efekt: (1) = pierwszy
-na wyswietlonej liscie = najnowszy, numery rosna w dol = coraz starsze pliki -
-"1-3" teraz naprawde wybiera trzy najnowsze nagrania, zgodnie z tym, co widac.
-
-Wszystko inne jak w v3: kopiowanie startuje od razu po dry-run (bez pytania
-"Skopiowac? t/n"), po skopiowaniu weryfikuje rozmiary i TYLKO jesli sie zgadzaja,
-pyta JEDNYM pytaniem (plus drugie "na pewno?") o usuniecie WSZYSTKICH wybranych
-oryginalow na raz (nigdy pojedynczo per plik) wraz z ich powiazanymi resztkami
-(.composition/.waveform). Brak polaczenia z iPhonem, brak SQLite, brak
-modyfikacji source przed jawnym potwierdzeniem usuniecia.
-
-Uruchamiane przez main.py (opakowanie, ktore zawsze wywoluje najnowsza wersje
-rsync_voice-memo_vN.py w tym katalogu) - patrz rsync_core/versioning.py.
-"""
+# Opis: rsync_voice-memo_v4.txt
 
 import shutil
 import sys
