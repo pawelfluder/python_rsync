@@ -1,0 +1,46 @@
+# clean_docker_v2 - Dokumentacja
+
+Pelne czyszczenie lokalnego Dockera: kontenery, obrazy, wolumeny, sieci
+i builder cache.
+
+## Zmiana wzgledem v1
+
+- Jesli `docker version` pokazuje, ze daemon nie odpowiada, skrypt probuje
+  sam go uruchomic (`open -a Docker` - aplikacja Docker Desktop na macOS),
+  czeka 10s i sprawdza ponownie. Dopiero jesli po tej probie daemon nadal
+  nie odpowiada, skrypt konczy dzialanie bledem (`sys.exit(1)`) tak jak
+  wczesniej.
+- Po `docker system prune -a --volumes --force` dodano jawne
+  `docker volume rm -f` na wszystkich pozostalych wolumenach
+  (`remove_all_volumes()`). W praktyce `system prune --volumes` nie zawsze
+  usuwa nazwane wolumeny (w v1 po pelnym przebiegu skryptu zostalo 8
+  nieuzywanych wolumenow, ~1.19GB) - jawne `volume rm` po prune gwarantuje
+  ich usuniecie.
+
+## Zachowanie
+
+1. Sprawdza, czy `docker` jest w PATH.
+2. Sprawdza, czy daemon odpowiada (`docker version`); jesli nie - probuje
+   uruchomic Docker Desktop, czeka 10s i sprawdza ponownie.
+3. Pokazuje stan przed czyszczeniem (`ps`, `images`, `volume`, `network`, `builder du`).
+4. Wymaga podwojnego potwierdzenia t/n (domyslnie NIE), tak jak destrukcyjne
+   operacje w `rsync_files`.
+5. Zatrzymuje wszystkie kontenery, usuwa wszystkie kontenery, potem:
+   - `docker system prune -a --volumes --force`
+   - `docker builder prune -a --force`
+6. Pokazuje stan po czyszczeniu.
+
+## Uruchomienie
+
+Przez opakowanie (zawsze najnowsza wersja):
+```
+python src/clean_docker/main.py
+```
+
+Albo bezposrednio ta wersja:
+```
+python src/clean_docker/clean_docker_v2.py
+```
+
+Uruchamiane przez `main.py` (opakowanie, ktore zawsze wywoluje najnowsza
+wersje `clean_docker_vN.py` w tym katalogu) - patrz `rsync_core/versioning.py`.

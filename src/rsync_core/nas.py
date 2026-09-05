@@ -15,9 +15,11 @@ for _path in (REPO_ROOT, PYTHON_MODULES_ROOT):
         sys.path.append(str(_path))
 
 # python_modules/modules/retry_network_drive/ trzyma cala historie wersji
-# (_v1.py ... _v6.py, jak retry_network_drive_v*.py w innych repo) - v6 to
-# aktualna, wspolna wersja bez repo-specyficznego bootstrappingu .env.
-from modules.retry_network_drive.retry_network_drive_v6 import (  # noqa: E402
+# (_v1.py ... _v7.py, jak retry_network_drive_v*.py w innych repo) - v7 to
+# aktualna, wspolna wersja: dodaje NAS_SUDO_PASSWORD (haslo do sudo z .env
+# zamiast promptu) i chown mount pointu po sudo mkdir (naprawia
+# "Operation not permitted" przy mount_smbfs po elevated mkdir).
+from modules.retry_network_drive.retry_network_drive_v7 import (  # noqa: E402
     NasAuthError,
     ensure_nas_available,
     load_env_file,

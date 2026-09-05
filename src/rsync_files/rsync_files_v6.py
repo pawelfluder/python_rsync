@@ -30,7 +30,7 @@ sys.path.append(str(PYTHON_MODULES_ROOT))
 
 # Importy z modulow projektu
 from modules.YamlParsing.files_collections_yaml_parsing_v1 import load_file_collections_from_yaml
-from modules.RetryNetworkDrive.retry_network_drive import ensure_nas_available, load_env_file
+from modules.retry_network_drive.retry_network_drive_v6 import ensure_nas_available, load_env_file
 
 load_env_file(REPO_ROOT / ".env")
 

@@ -195,10 +195,10 @@ Dzięki tej strukturze:
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: rsync_v1 (terminal)",
+      "name": "Python: rsync_files (terminal)",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/src/Rsync/rsync_v1.py",
+      "program": "${workspaceFolder}/src/rsync_files/main.py",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
       "justMyCode": true
@@ -217,5 +217,5 @@ Ta konfiguracja blokuje przycisk "Run and Debug" dla aktywnego pliku `.py`. Zami
 2. **Przez terminal**:
    ```bash
    source 03_scripts/02_activate_venv.sh
-   python src/Rsync/rsync_v1.py
+   python src/rsync_files/main.py
    ```

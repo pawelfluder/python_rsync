@@ -1,9 +1,10 @@
 """Wspolny mechanizm 'main.py to tylko opakowanie, ktore uruchamia najnowsza wersje'.
 
-Uzywane przez rsync_files/main.py i rsync_voice-memo/main.py: kazdy z tych folderow
-trzyma cala historie wersji jako osobne pliki <prefix>_v1.py, <prefix>_v2.py, ...
-(tak jak retry_network_drive_v1.py...v6.py) - main.py sam nie zawiera logiki,
-tylko znajduje plik z najwyzszym numerem wersji i wywoluje jego main().
+Uzywane przez rsync_files/main.py, rsync_voice-memo/main.py i clean_docker/main.py:
+kazdy z tych folderow trzyma cala historie wersji jako osobne pliki
+<prefix>_v1.py, <prefix>_v2.py, ... (tak jak retry_network_drive_v1.py...v6.py) -
+main.py sam nie zawiera logiki, tylko znajduje plik z najwyzszym numerem wersji
+i wywoluje jego main().
 
 Wczytywanie przez importlib.util (nie zwykly "import") dziala nawet dla plikow,
 ktorych nazwa zawiera myslnik (np. rsync_voice-memo_v1.py) - "import" z myslnikiem

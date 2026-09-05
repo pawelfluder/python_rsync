@@ -1,0 +1,33 @@
+# rsync_voice-memo_v5 - Dokumentacja
+
+Wariant specjalny na sytuacje jednorazowa, NIE nastepca v4 w normalnym uzyciu.
+
+## Kontekst
+
+Stare wpisy w Voice Memos ciagle sie "odswiezaly" (blad synchronizacji
+iCloud), wiec caly katalog Recordings zostal recznie przeniesiony na Pulpit
+poleceniem:
+
+    backup="/Users/pawelfluder/Desktop/VoiceMemos-backup-$(date +%Y%m%d-%H%M%S)"
+    mkdir "$backup"
+    mv "/Users/pawelfluder/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings" "$backup/"
+    open -a "Voice Memos"
+
+a aplikacja Voice Memos wystartowala od nowa z pusta baza. Stare nagrania
+trzeba jeszcze przeniesc na QNAP z tego backupu na Pulpicie, zanim zostana
+tam ostatecznie usuniete.
+
+## Zmiana wzgledem v4
+
+v1-v4 wykrywaly source automatycznie (discovery.py, `find_voice_memos_source`,
+przeszukiwanie CANDIDATE_SOURCE_PATHS). v5 zastepuje to recznie wskazana
+stala `SOURCE_PATH` na gorze modulu - wskazuje na folder backupu na Pulpicie.
+Zaraz pod nia, zakomentowana, stoi ta sama zmienna ze standardowa (systemowa)
+sciezka Voice Memos - odkomentuj ja (i zakomentuj wersje z Pulpitu), zeby
+skrypt znow czytal z normalnej lokalizacji.
+
+Wszystko inne jak w v4: numeracja (1) = najnowszy, kopiowanie startuje od
+razu po dry-run, po skopiowaniu weryfikacja rozmiarow i TYLKO jesli sie
+zgadzaja - jedno pytanie (plus drugie "na pewno?") o usuniecie WSZYSTKICH
+wybranych oryginalow na raz wraz z powiazanymi resztkami
+(`.composition`/`.waveform`).

@@ -1,4 +1,4 @@
-# Opis: rsync_files_v1.txt
+# Opis: rsync_files_v7.txt
 
 import shutil
 import sys

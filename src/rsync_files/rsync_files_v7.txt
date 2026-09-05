@@ -1,12 +1,22 @@
-# rsync_files_v1 - Dokumentacja
+# rsync_files_v7 - Dokumentacja
 
 Synchronizacja plikow do QNAP przy uzyciu rsync (pytanie o kazda sciezke
 osobno).
 
-Nastepca `src/Rsync/rsync_v6.py` po wydzieleniu wspolnej logiki do
+Nastepca `rsync_files_v6.py` po wydzieleniu wspolnej logiki do
 `rsync_core` - zachowuje dokladnie to samo zachowanie: `AA_Input/input.yaml`,
 kolekcje YAML, pytanie o cel dla kazdego source, domyslny cel
 `/Volumes/qnap/01_todo_a`, obecne potwierdzenia i opcjonalne usuwanie zrodel.
 
 Uruchamiane przez `main.py` (opakowanie, ktore zawsze wywoluje najnowsza
 wersje `rsync_files_vN.py` w tym katalogu) - patrz `rsync_core/versioning.py`.
+
+## Historia wersji w tym katalogu
+
+Caly dawny folder `src/Rsync` zostal usuniety (mylil sie z `rsync_files`) -
+jego 4 ostatnie wersje przeniesiono tutaj z zachowanym numerowaniem
+(`rsync_v3.py` -> `rsync_files_v3.py`, ... `rsync_v6.py` -> `rsync_files_v6.py`),
+a ten plik (dawniej `rsync_files_v1.py`) zostal przenumerowany na v7, bo
+chronologicznie/funkcjonalnie jest nastepca v6 (patrz wyzej). Starsze
+`rsync_v1.py` i `rsync_v2.py` nie zostaly przeniesione (historia nadal
+dostepna w git log), zgodnie z zasada "co najmniej 4 ostatnie wersje".

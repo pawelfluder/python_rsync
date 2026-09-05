@@ -14,7 +14,7 @@ The `confirm_pair()` function asks for user confirmation **only when necessary**
 - **Target exists and has data**: Ask for confirmation (protection against overwriting)
 
 ### Files
-- `src/Rsync/rsync_v5.py` (line ~131-157)
+- `src/rsync_files/rsync_files_v5.py` (line ~131-157)
 
 ### Bug Fixed
 Previously (v3), the script always asked for confirmation even when target didn't exist, which was unnecessary and annoying for first-time syncs.
@@ -53,8 +53,8 @@ The `run_rsync_with_live_output()` function automatically retries rsync operatio
 - Only retries specific error codes (11, 12, 23, 24, 30)
 
 ### Files
-- `src/Rsync/rsync_v3.py` (line ~199-255)
-- `src/Rsync/rsync_v5.py` (line ~213-269)
+- `src/rsync_files/rsync_files_v3.py` (line ~199-255)
+- `src/rsync_files/rsync_files_v5.py` (line ~213-269)
 
 ### Error Codes That Trigger Retry
 | Code | Meaning | Cause |
@@ -99,7 +99,7 @@ rsync output is displayed in real-time with detailed progress information:
 - All print statements use `flush=True` for immediate output
 
 ### Files
-- `src/Rsync/rsync_v2.py` and later
+- `src/rsync_files/rsync_files_v3.py` and later (introduced in the earlier, now-removed v2)
 
 ### Code Example
 ```python
@@ -122,8 +122,8 @@ Delete operations are performed safely:
 - Uses dry-run to preview deletions
 
 ### Files
-- `src/Rsync/rsync_v3.py` (line ~370-432)
-- `src/Rsync/rsync_v5.py` (line ~384-446)
+- `src/rsync_files/rsync_files_v3.py` (line ~370-432)
+- `src/rsync_files/rsync_files_v5.py` (line ~384-446)
 
 ---
 
@@ -137,5 +137,5 @@ Source files are deleted only after double confirmation:
 - Protects against accidental data loss
 
 ### Files
-- `src/Rsync/rsync_v3.py` (line ~455-471)
-- `src/Rsync/rsync_v5.py` (line ~469-485)
+- `src/rsync_files/rsync_files_v3.py` (line ~455-471)
+- `src/rsync_files/rsync_files_v5.py` (line ~469-485)

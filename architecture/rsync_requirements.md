@@ -10,7 +10,7 @@ Podczas synchronizacji dużych folderów przez sieć, połączenie może zostać
 - Błędy I/O na sieciowym dysku
 
 ### Rozwiązanie
-rsync_v3.py implementuje **nieskończony retry** przy błędach związanych z połączeniem/siecią.
+rsync_files_v3.py implementuje **nieskończony retry** przy błędach związanych z połączeniem/siecią (obecnie: `rsync_core/rsync_ops.py`, uzywane przez `rsync_files_v7.py`).
 
 ### Kody błędów które triggerują retry:
 | Kod | Znaczenie | Przyczyna |

@@ -1,0 +1,30 @@
+# clean_docker_v1 - Dokumentacja
+
+Pelne czyszczenie lokalnego Dockera: kontenery, obrazy, wolumeny, sieci
+i builder cache.
+
+## Zachowanie
+
+1. Sprawdza, czy `docker` jest w PATH i czy daemon odpowiada.
+2. Pokazuje stan przed czyszczeniem (`ps`, `images`, `volume`, `network`, `builder du`).
+3. Wymaga podwojnego potwierdzenia t/n (domyslnie NIE), tak jak destrukcyjne
+   operacje w `rsync_files`.
+4. Zatrzymuje wszystkie kontenery, usuwa wszystkie kontenery, potem:
+   - `docker system prune -a --volumes --force`
+   - `docker builder prune -a --force`
+5. Pokazuje stan po czyszczeniu.
+
+## Uruchomienie
+
+Przez opakowanie (zawsze najnowsza wersja):
+```
+python src/clean_docker/main.py
+```
+
+Albo bezposrednio ta wersja:
+```
+python src/clean_docker/clean_docker_v1.py
+```
+
+Uruchamiane przez `main.py` (opakowanie, ktore zawsze wywoluje najnowsza
+wersje `clean_docker_vN.py` w tym katalogu) - patrz `rsync_core/versioning.py`.
