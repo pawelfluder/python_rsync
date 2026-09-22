@@ -16,6 +16,10 @@ i builder cache.
   usuwa nazwane wolumeny (w v1 po pelnym przebiegu skryptu zostalo 8
   nieuzywanych wolumenow, ~1.19GB) - jawne `volume rm` po prune gwarantuje
   ich usuniecie.
+- Analogicznie dodano jawne `docker rmi -f` na wszystkich pozostalych
+  obrazach (`remove_all_images()`). Po kolejnym przebiegu (juz z fixem
+  wolumenow) zostaly 2 nieuzywane obrazy (`mongo:7`, `postgres:17`,
+  ~1.3GB) mimo `system prune -a` - ten sam wzorzec co z wolumenami.
 
 ## Zachowanie
 
@@ -27,6 +31,8 @@ i builder cache.
    operacje w `rsync_files`.
 5. Zatrzymuje wszystkie kontenery, usuwa wszystkie kontenery, potem:
    - `docker system prune -a --volumes --force`
+   - jawne `docker volume rm -f` na wszystkim, co zostalo
+   - jawne `docker rmi -f` na wszystkim, co zostalo
    - `docker builder prune -a --force`
 6. Pokazuje stan po czyszczeniu.
 

@@ -128,12 +128,23 @@ def remove_all_volumes() -> None:
     print_command_output(run_docker(["volume", "rm", "-f", *volumes]))
 
 
+def remove_all_images() -> None:
+    """Usuwa wszystkie obrazy (jawnie, bo 'system prune -a' potrafi pomijac niektore obrazy)."""
+    print("\n🗑️ Usuwam wszystkie obrazy...", flush=True)
+    images = list_ids(["images", "-aq"])
+    if not images:
+        print("  ℹ️ Brak obrazow do usuniecia", flush=True)
+        return
+    print_command_output(run_docker(["rmi", "-f", *images]))
+
+
 def prune_everything() -> None:
-    """Pelne czyszczenie: system prune -a --volumes + volume rm (jawnie) + builder prune -a."""
+    """Pelne czyszczenie: system prune -a --volumes + volume/image rm (jawnie) + builder prune -a."""
     print("\n🧹 docker system prune -a --volumes --force...", flush=True)
     print_command_output(run_docker(["system", "prune", "-a", "--volumes", "--force"]))
 
     remove_all_volumes()
+    remove_all_images()
 
     print("\n🧱 docker builder prune -a --force...", flush=True)
     print_command_output(run_docker(["builder", "prune", "-a", "--force"]))
